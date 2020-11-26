@@ -1,0 +1,89 @@
+---
+title: "31848336 - Homework 1"
+author: "31848336"
+output: html_document
+---
+
+Please read all instructions carefully.  Replace 'STUDENTNUM' with your student number. To allow this file to be knit, you might need to save it in a new location, as you do not have write permissions in the dropbox folder, and R does not work well with chinese characters.
+Do not comment out the lines that produce output.  Check your html file before submission to ensure it has all relevant output.  Ensure all answers are your own words and your own work.  Do not delete anything below these instructions.  Thank you! 
+
+
+**Question 1A:**
+```{r Question 1A}
+#INSERT CODE HERE
+#read the data
+df <-read.csv("Homework 1 Data - 436R.csv")
+
+#peek
+names(df)
+summary(df)
+```
+
+
+**Question 1B:**
+```{r Question 1B}
+#INSERT CODE HERE
+#top 10 data
+head(df,10)
+```
+
+
+**Question 1C:**
+```{r Question 1C}
+#INSERT CODE HERE
+#subset all started period
+post_treat <- subset(df,isTreatmentPeriod == 1)
+
+#find the earliest date
+min(post_treat$date)
+```
+
+**Question 1D:**
+```{r Question 1D}
+#INSERT CODE HERE
+#i. subset treatment group
+treatment_group <- subset(df,isTreatmentGroup == 1)
+
+#ii. log(revenue) ~ treatment period
+lm(log(revenue)~isTreatmentPeriod,data = treatment_group)
+
+#iii. summary
+summary(lm(log(revenue)~isTreatmentPeriod,data = treatment_group))
+```
+
+
+**Question 1E:**
+```{r Question 1E}
+#INSERT CODE HERE
+#i. subset data from the pre treatment period
+pre_treat <- subset(df, isTreatmentPeriod == 0)
+
+#ii. log(revenue) ~ treatment group
+lm(log(revenue)~isTreatmentGroup,data = pre_treat)
+
+#iii. summary
+summary(lm(log(revenue)~isTreatmentGroup,data = pre_treat))
+```
+
+
+**Question 1F:**
+```{r Question 1F}
+#INSERT CODE HERE
+#log(revenue) ~ treatment group from post-treatment period
+summary(lm(log(revenue) ~ isTreatmentGroup, data = post_treat))
+```
+
+**Question 2A:**
+The coefficient on treatment group means after the treatment period, when treatment group didn't receive the ads, the mean revenue of this group decreases 3.94%. And the p-value is too small so we should reject the assumption that the ads don't have impact on revenue. But the R-square is too small I don't think this results explain much variation in the data.
+
+**Question 2B:**
+The purpose is to make sure only "ads" can influence "revenue"and all other factors of two groups are the same. The p-value is large enough and the result is not significant. It means we should accept the assumption that two groups are the same during the pre-treatment period.
+
+**Question 2C:**
+First the R-square is too small so the result cannot explain a lot variation in the data. Second, the p-value is large enough and greater than the default alpha which is 0.05 so it means the advertising is noneffective. 
+
+**Question 2D:**
+The purpose of control group is to show the only difference between the two groups is the treatment group didn't see the advertising after the treatment period. What was unaccounted in part 1D is we don't know how control group's response in the pre-treatment period and post-treatment period. In 1F, we account both treatment and control groups to see the different impacts.
+
+**Question 2E:**
+Yes it affects the interpretation. The R-square is too small and cannot explain a lot variation in the data. So the result is not representative for the effectiveness of advertising.

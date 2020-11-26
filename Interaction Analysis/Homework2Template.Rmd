@@ -1,0 +1,56 @@
+---
+title: "STUDENTNUM - Homework 1"
+author: "STUDENTNUM"
+output: html_document
+---
+
+Please read all instructions carefully.  Fill in all fields above (Espicially your student number) and remove square brackets. To allow this file to be knit, you might need to save it in a new location, as you do not have write permissions in the dropbox folder, and R does not work well with chinese characters.
+Do not comment out the lines that produce output.  Check your html file before submission to ensure it has all relevant output.  Ensure all answers are your own words and your own work.  Do not delete anything below these instructions.  Thank you! 
+
+
+**Question 1A:**
+```{r Question 1A}
+#INSERT CODE HERE
+```
+
+
+**Question 1B:**
+```{r Question 1B}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 1 SENTENCE]
+
+
+**Question 1C:**
+```{r Question 1C}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+
+
+**Question 1D:**
+```{r Question 1D}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+
+
+**Question 2A:**
+```{r Question 2A}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+
+
+**Question 2B:**
+```{r Question 2B}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+
+**Question 2C:**
+```{r Question 2C}
+#INSERT CODE HERE
+```
+
+[WRITE ANSWER HERE. 2 SENTENCES MAX]

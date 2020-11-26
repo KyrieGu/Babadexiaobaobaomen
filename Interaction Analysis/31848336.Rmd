@@ -1,0 +1,82 @@
+---
+title: "31848336 - Homework 2"
+author: "31848336"
+output: html_document
+---
+
+Please read all instructions carefully.  Fill in all fields above (Espicially your student number) and remove square brackets. To allow this file to be knit, you might need to save it in a new location, as you do not have write permissions in the dropbox folder, and R does not work well with chinese characters.
+Do not comment out the lines that produce output.  Check your html file before submission to ensure it has all relevant output.  Ensure all answers are your own words and your own work.  Do not delete anything below these instructions.  Thank you! 
+
+
+**Question 1A:**
+```{r Question 1A}
+#INSERT CODE HERE
+#load the data
+filename = "HW2 Data"
+rawData <- read.csv(paste(filename,".csv",sep = ""))
+names(rawData)
+summary(rawData)
+
+#without interaction summary
+summary(lm(clickPerDollar ~ factor(category) + factor(body) + 
+             factor(placement) + factor(adType) + ageMean, data = rawData))
+```
+
+
+**Question 1B:**
+```{rerror=TRUE Question 1B}
+#INSERT CODE HERE
+#add "date"
+summary(lm(clickPerDollar ~ factor(category) + factor(body) + 
+             factor(placement) + factor(adType) + factor(date) + ageMean, data = rawData))
+```
+[WRITE ANSWER HERE. 1 SENTENCE]
+Because in this case date is a constant/only 1 level and cannot be recognized as an independent variable.
+
+
+**Question 1C:**
+```{r Question 1C}
+#INSERT CODE HERE
+levels(factor(rawData$category))
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+It means the difference of category "general" from the baseline "cosmetics" is -7.05296.
+
+**Question 1D:**
+```{r Question 1D}
+#INSERT CODE HERE
+levels(factor(rawData$body))
+levels(factor(rawData$adType))
+levels(factor(rawData$placement))
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+It means with the category is "cosmetic", body is "check out..." and etc (all categorical variables equal to their baselines), one year increase in customers' age will generate about 0.35 clicks the ad achieved with each dollar spent.
+
+**Question 2A:**
+```{r Question 2A}
+#INSERT CODE HERE
+#add interaction between "category" and "ageMean"
+summary(lm(clickPerDollar ~ factor(category)*ageMean + factor(body) + 
+             factor(placement) + factor(adType), data = rawData))
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+It means when comparing with "cosmetic", when the category is "Retailer", the marginal effect of the "ageMean" is 0.31547. The Total effect will be 0.31547 + 0.17437 = 0.48984.
+
+**Question 2B:**
+```{r Question 2B}
+#INSERT CODE HERE
+```
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+In part 1, the coefficient means the average "eCom" clicks is 9.43342 larger than "cosmetic". In part 2, the coefficient means with "ageMean" set to 0, the "eCom" will be 11.98 larger than "cosmetic".
+
+**Question 2C:**
+```{r Question 2C}
+#INSERT CODE HERE
+#add interaction "placement"
+summary(lm(clickPerDollar ~ factor(category)*ageMean + factor(category)*factor(placement) + factor(body) + 
+             factor(placement) + factor(adType), data = rawData))
+```
+
+[WRITE ANSWER HERE. 2 SENTENCES MAX]
+It means when comparing with "cosmetic" and "desktop", when the "the type of retailer referenced in the ads" is "ecom", the marginal effect of "ads appear on mobile" is 20.58824. And the total effect would be 20.58824 + 0.17996 = 20.7682.
+

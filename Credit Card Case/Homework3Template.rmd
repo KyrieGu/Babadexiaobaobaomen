@@ -1,0 +1,160 @@
+---
+title: "31858336 - Homework 3"
+author: "31858336"
+output: html_document
+---
+
+Please read all instructions carefully.  Fill in all fields above (Espicially your student number) and remove square brackets. To allow this file to be knit, you might need to save it in a new location, as you do not have write permissions in the dropbox folder, and R does not work well with Chinese characters.
+Do not comment out the lines that produce output.  Check your html file before submission to ensure it has all relevant output. Do not delete anything below these instructions.  Thank you! 
+
+
+
+**Question 1A:**
+```{r Question 1A}
+#TRAIN AND ESTIMATE model1A (WITHOUT EXPENDITURE) HERE
+#clean up everything first
+rm(list = ls())
+gc()
+
+#read the data
+rawData = read.csv("Student Data 6.csv")
+
+#estimate function
+rmse = function(model){
+  mean((predict(model,validationData) - (validationData$card))^2)^0.5
+}
+
+#Model A training
+#try to get some info about interactions
+library(earth)
+
+#training models
+set.seed(1)
+
+#filter out expenditure
+modelAData = subset(rawData,select = -expenditure)
+#split the data
+isTraining = runif(nrow(modelAData)) < 0.8
+trainingData = subset(modelAData, isTraining)
+validationData = subset(modelAData, !isTraining)
+
+
+
+#descriptive analysis to get insights first
+modelA1 = lm(card~., data = modelAData)
+anova(modelA1)
+#looks like besides "age" and "months", other factos matter
+
+#to verify my guess, use BIC
+library(leaps)
+basicSubset = regsubsets(card~.,data = modelAData)
+basicSummary = summary(basicSubset)
+bestBIC = which.min(basicSummary$bic)
+coef(basicSubset,bestBIC) #my guess is fair
+
+#predictive analysis
+#linear models
+modelA2 = lm(card ~ . -age-months,data = modelAData)
+modelA3 = lm(card~(.-age-months)^2, data = modelAData)
+
+#further adjust based on anova
+anova(modelA2)
+modelA4 = lm(card ~ reports + income + share + owner + active, data = modelAData)
+
+#MARS
+modelA4 = earth(card ~., data = modelAData)
+modelA5 = earth(card~.,  data = modelAData, degree = 2, thres = 0)
+modelA6 = earth(card~.,  data = modelAData, degree = 2, thres = 0.01)
+modelA7 = earth(card~.,  data = modelAData, degree = 2, thres = 0.1)
+
+plotmo(modelA4)
+plotmo(modelA5)
+
+#apply some interactions
+modelA6 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0)
+modelA7 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0.01)
+modelA8 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0.1)
+
+#random forest
+library(randomForest)
+modelA9 = randomForest(card ~. , data = modelAData)
+modelA10 = randomForest(card ~.-age-months, data = modelAData)
+modelA11 = randomForest(card ~ reports + income + share + owner + active, data = modelAData)
+modelA12 = randomForest(card ~.^2, data = modelAData)
+modelA13 = randomForest(card ~ (.-age-months)^2, data = modelAData)
+rmse(modelA12)
+
+#cross validation test with 5-folds
+nFold = 5
+#Step 1: Randomly choose which fold each row is in
+set.seed(1)
+valNum = floor(runif(nrow(modelAData))*nFold)+1
+#all models
+modelList = list(modelA1,modelA2,modelA3,modelA4,modelA5,modelA6,modelA7,modelA8,modelA9,modelA10,modelA11,modelA12,modelA13)
+#all models storage
+modelPerformance = matrix(NA,nFold,length(modelList)+1) #plus 1 to store the min value model
+
+for(fold in 1:nFold){
+    #Step 2i: Get the training and validation data for this fold
+		trainingData = subset(modelAData,valNum!=fold)
+		validationData = subset(modelAData,valNum==fold)
+		
+	  #Step 2ii: loop every models in this fold
+		for(m in 1:length(modelList)){
+		  model = modelList[[m]] 
+		  performance = rmse(model)
+		  modelPerformance[fold,m] = performance
+		}
+    
+	  #find the best model in this fold
+		modelPerformance[fold,length(modelList)+1] = which.min(modelPerformance[fold,c(1:length(modelList))])
+}
+
+bestModel = sort(modelPerformance[,length(modelList) + 1],decreasing = TRUE)[1]
+
+```
+
+
+
+**Question 1B:**
+```{r Question 1B}
+#TRAIN AND ESTIMATE model1B (WITH EXPENDITURES) HERE
+```
+
+
+```{r}
+#Fill in your student number in the line below to generate the RData file for submission. DO NOT CHANGE ANYTHING ELSE ABOUT THE CODE BELOW.
+studentNum = 31848336 
+
+#This reduces the file size in some cases fringe cases
+model1A$cv.list = NULL
+model1A$cv.oof.fit.tab = NULL
+model1A$varmod = NULL
+
+model1B$cv.list = NULL
+model1B$cv.oof.fit.tab = NULL
+model1B$varmod = NULL
+
+save(model1A, model1B, file = paste0(studentNum,'.Rdata'))
+
+#The following code checks if you generated the models correctly.  Run it, and if you see 'looks good!' pop up twice then your Rdata file is ready. Do not alter it any way - not even to change the variable names.  If not, please correct, or contact the TAs for help 
+load(paste0(studentNum,'.Rdata'))
+rightType = class(model1A)=='earth'|class(model1A)=='lm'
+rightType2 = class(model1B)=='earth'|class(model1B)=='lm'
+if(class(model1A)=='earth'){
+	noExpend = grepl('[^-]expenditure',paste(rownames(model1A$coefficients),collapse=''))
+}  else {
+	noExpend = grepl('[^-]expenditure',paste(names(model1A$coefficients),collapse=''))
+}
+
+if(rightType&rightType2&noExpend){ 
+	print('Looks Good!')
+} else {
+	print('Mistake - Check that you are saving lm and earth models, and that expenditure is not in the first model')
+}
+
+
+checkModel(model1A)
+checkModel(model1B)
+
+```
