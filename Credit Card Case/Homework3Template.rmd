@@ -52,37 +52,48 @@ basicSummary = summary(basicSubset)
 bestBIC = which.min(basicSummary$bic)
 coef(basicSubset,bestBIC) #my guess is fair
 
+#find relationships between variables
+earthModel = earth(card ~., data = modelAData)
+plotmo(earthModel)
+
 #predictive analysis
 #linear models
+modelA1 = lm(card~., data = modelAData)
 modelA2 = lm(card ~ . -age-months,data = modelAData)
-modelA3 = lm(card~(.-age-months)^2, data = modelAData)
+modelA3 = lm(card~ (.-age-months)^2, data = modelAData)
 
-#further adjust based on anova
-anova(modelA2)
-modelA4 = lm(card ~ reports + income + share + owner + active, data = modelAData)
+#further adjust based on BIC
+modelA4 = lm(card ~ reports + income + share + owner + selfemp + dependents + majorcards + active, data = modelAData)
+
+#further adjusted based on interactions (linear)
+anova(modelA3)
+modelA5 = lm(card~ (.-age-months) + reports*income + reports*share + reports*active + share*selfemp + share*dependents + share*majorcards + owner*selfemp + selfemp*dependents, data = modelAData)
+
 
 #MARS
-modelA4 = earth(card ~., data = modelAData)
-modelA5 = earth(card~.,  data = modelAData, degree = 2, thres = 0)
-modelA6 = earth(card~.,  data = modelAData, degree = 2, thres = 0.01)
-modelA7 = earth(card~.,  data = modelAData, degree = 2, thres = 0.1)
+modelA6 = earth(card ~., data = modelAData)
+modelA7 = earth(card ~., data = modelAData, thres = 0.01)
+modelA8 = earth(card ~., data = modelAData, thres = 0.1)
 
-plotmo(modelA4)
-plotmo(modelA5)
+#non-linear interactions
+modelA9 = earth(card~.,  data = modelAData, degree = 2, thres = 0)
+modelA10 = earth(card~.,  data = modelAData, degree = 2, thres = 0.01)
+modelA11 = earth(card~.,  data = modelAData, degree = 2, thres = 0.1)
+
+plotmo(modelA9)
 
 #apply some interactions
-modelA6 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0)
-modelA7 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0.01)
-modelA8 = earth(card ~ reports + income + share + owner + active + share*reports + income*share + share*active, data = modelAData, thres = 0.1)
+modelA12 = earth(card ~ (.-age-months) + share*reports + income*share + share*active, data = modelAData, thres = 0)
+modelA13 = earth(card ~ (.-age-months) + share*reports + income*share + share*active, data = modelAData, thres = 0.01)
+modelA14 = earth(card ~ (.-age-months) + share*reports + income*share + share*active, data = modelAData, thres = 0.1)
 
-#random forest
-library(randomForest)
-modelA9 = randomForest(card ~. , data = modelAData)
-modelA10 = randomForest(card ~.-age-months, data = modelAData)
-modelA11 = randomForest(card ~ reports + income + share + owner + active, data = modelAData)
-modelA12 = randomForest(card ~.^2, data = modelAData)
-modelA13 = randomForest(card ~ (.-age-months)^2, data = modelAData)
-rmse(modelA12)
+#random forest(optional)
+# library(randomForest)
+# modelA15 = randomForest(card ~. , data = modelAData)
+# modelA16 = randomForest(card ~.-age-months, data = modelAData)
+# modelA17 = randomForest(card ~ reports + income + share + owner + active, data = modelAData)
+# modelA18 = randomForest(card ~.^2, data = modelAData)
+# modelA19 = randomForest(card ~ (.-age-months)^2, data = modelAData)
 
 #cross validation test with 5-folds
 nFold = 5
@@ -90,14 +101,118 @@ nFold = 5
 set.seed(1)
 valNum = floor(runif(nrow(modelAData))*nFold)+1
 #all models
-modelList = list(modelA1,modelA2,modelA3,modelA4,modelA5,modelA6,modelA7,modelA8,modelA9,modelA10,modelA11,modelA12,modelA13)
+modelList = list(modelA1,modelA2,modelA3,modelA4,modelA5,modelA6,modelA7,modelA8,modelA9,modelA10,modelA11,modelA12,modelA13,modelA14)
 #all models storage
 modelPerformance = matrix(NA,nFold,length(modelList)+1) #plus 1 to store the min value model
-
+#find the most optimal one
 for(fold in 1:nFold){
     #Step 2i: Get the training and validation data for this fold
-		trainingData = subset(modelAData,valNum!=fold)
-		validationData = subset(modelAData,valNum==fold)
+  	trainingData = subset(modelAData,valNum!=fold)
+  	validationData = subset(modelAData,valNum==fold)
+  		
+  	#Step 2ii: loop every models in this fold
+  	for(m in 1:length(modelList)){
+  		model = modelList[[m]] 
+  		performance = rmse(model)
+  		modelPerformance[fold,m] = performance
+  	}
+      
+  	#find the best model in this fold
+  	modelPerformance[fold,length(modelList)+1] = which.min(modelPerformance[fold,c(1:length(modelList))])
+  }
+  
+bestModel = sort(modelPerformance[,length(modelList) + 1],decreasing = TRUE)[1]
+
+library(DescTools)
+bestModel = Mode(modelPerformance[,length(modelList) + 1])[1]
+bestModel
+model1A = modelA12
+
+```
+
+
+
+**Question 1B:**
+```{r Question 1B}
+#TRAIN AND ESTIMATE model1B (WITH EXPENDITURES) HERE
+#filter out expenditure
+modelBData = rawData
+#split the data
+isTraining = runif(nrow(modelBData)) < 0.8
+trainingData = subset(modelBData, isTraining)
+validationData = subset(modelBData, !isTraining)
+
+
+
+#descriptive analysis to get insights first
+modelB1 = lm(card~., data = modelBData)
+anova(modelB1)
+#looks like besides "age" and "months" + "expenditure", other factos matter
+
+#to verify my guess, use BIC
+library(leaps)
+basicSubset = regsubsets(card~.,data = modelBData)
+basicSummary = summary(basicSubset)
+bestBIC = which.min(basicSummary$bic)
+coef(basicSubset,bestBIC) #my guess is fair
+
+#find relationships between variables
+earthModel = earth(card ~., data = modelBData)
+plotmo(earthModel)
+
+#predictive analysis
+#linear models
+modelB1 = lm(card~., data = modelBData)
+modelB2 = lm(card ~ . -age-months,data = modelBData)
+modelB3 = lm(card~ (.-age-months)^2, data = modelBData)
+
+#further adjust based on BIC
+modelB4 = lm(card ~ reports + income + share + owner + selfemp + dependents + majorcards + active, data = modelBData)
+
+#further adjusted based on interactions (linear)
+anova(modelB3)
+modelB5 = lm(card~ (.-age-months-expenditure) + reports*income + reports*share + reports*active + income*share, data = modelBData)
+
+
+#MARS
+modelB6 = earth(card ~., data = modelBData)
+modelB7 = earth(card ~., data = modelBData, thres = 0.01)
+modelB8 = earth(card ~., data = modelBData, thres = 0.1)
+
+#non-linear interactions
+modelB9 = earth(card~.,  data = modelBData, degree = 2, thres = 0)
+modelB10 = earth(card~.,  data = modelBData, degree = 2, thres = 0.01)
+modelB11 = earth(card~.,  data = modelBData, degree = 2, thres = 0.1)
+
+plotmo(modelB9)
+
+#apply some interactions
+modelB12 = earth(card ~ . + share*reports + reports*expenditure + reports*active + income*expenditure + share*expenditure, data = modelBData, thres = 0)
+modelB13 = earth(card ~ . + share*reports + reports*expenditure + reports*active + income*expenditure + share*expenditure, data = modelBData, thres = 0.01)
+modelB14 = earth(card ~ . + share*reports + reports*expenditure + reports*active + income*expenditure + share*expenditure, data = modelBData, thres = 0.1)
+
+#random forest(optional)
+# library(randomForest)
+# modelB15 = randomForest(card ~. , data = modelBData)
+# modelB16 = randomForest(card ~.-age-months, data = modelBData)
+# modelB17 = randomForest(card ~ reports + income + share + owner + active, data = modelBData)
+# modelB18 = randomForest(card ~.^2, data = modelBData)
+# modelB19 = randomForest(card ~ (.-age-months)^2, data = modelBData)
+
+#find the most optimal one
+#cross validation test with 5-folds
+nFold = 5
+#Step 1: Randomly choose which fold each row is in
+set.seed(2)
+valNum = floor(runif(nrow(modelBData))*nFold)+1
+#all models
+modelList = list(modelB1,modelB2,modelB3,modelB4,modelB5,modelB6,modelB7,modelB8,modelB9,modelB10,modelB11,modelB12,modelB13,modelB14)
+#all models storage
+modelPerformance = matrix(NA,nFold,length(modelList)+1) #plus 1 to store the min value model
+for(fold in 1:nFold){
+    #Step 2i: Get the training and validation data for this fold
+		trainingData = subset(modelBData,valNum!=fold)
+		validationData = subset(modelBData,valNum==fold)
 		
 	  #Step 2ii: loop every models in this fold
 		for(m in 1:length(modelList)){
@@ -110,15 +225,10 @@ for(fold in 1:nFold){
 		modelPerformance[fold,length(modelList)+1] = which.min(modelPerformance[fold,c(1:length(modelList))])
 }
 
-bestModel = sort(modelPerformance[,length(modelList) + 1],decreasing = TRUE)[1]
-
-```
-
-
-
-**Question 1B:**
-```{r Question 1B}
-#TRAIN AND ESTIMATE model1B (WITH EXPENDITURES) HERE
+library(DescTools)
+bestModel = Mode(modelPerformance[,length(modelList) + 1])[1]
+bestModel
+model1B = modelB9
 ```
 
 
